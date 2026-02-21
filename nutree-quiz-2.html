@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nutree — Find My Perfect Stack</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cream: #F5F0E8;
+    --sage: #7A9E7E;
+    --deep-green: #2C4A35;
+    --warm-brown: #8B6F47;
+    --charcoal: #2A2A2A;
+    --gold: #C4952A;
+    --light-sage: #E8F0E9;
+    --muted: #8A8A7A;
+    --white: #FDFCF9;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(245, 240, 232, 0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(122, 158, 126, 0.2);
+    padding: 0 5vw;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    color: var(--deep-green);
+    text-decoration: none;
+  }
+  .logo span { color: var(--sage); }
+  .logo::after { content: '®'; font-size: 0.5rem; vertical-align: super; margin-left: 2px; color: var(--muted); }
+  .header-tag {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--sage);
+    opacity: 0.8;
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar-wrap {
+    background: rgba(122, 158, 126, 0.12);
+    height: 3px;
+    width: 100%;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--sage), var(--deep-green));
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ─── QUIZ LAYOUT ─── */
+  .quiz-wrapper {
+    min-height: calc(100vh - 75px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 5vw 5rem;
+    position: relative;
+  }
+
+  .quiz-wrapper::before {
+    content: '';
+    position: fixed;
+    right: -10vw;
+    top: 10vh;
+    width: 60vw;
+    height: 80vh;
+    background: radial-gradient(ellipse at 60% 40%, rgba(122,158,126,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .step-indicator {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 0.75rem;
+    opacity: 0;
+    animation: fadeUp 0.5s ease 0.1s forwards;
+  }
+
+  /* ─── QUESTION CARD ─── */
+  .question-card {
+    width: 100%;
+    max-width: 680px;
+    opacity: 0;
+    transform: translateY(24px);
+    animation: fadeUp 0.55s ease 0.15s forwards;
+  }
+
+  .question-card h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--deep-green);
+    margin-bottom: 0.6rem;
+  }
+  .question-card h2 em { font-style: italic; color: var(--warm-brown); }
+  .question-sub {
+    font-size: 0.92rem;
+    color: var(--muted);
+    font-weight: 300;
+    margin-bottom: 2.2rem;
+    line-height: 1.6;
+  }
+
+  /* ─── CHOICE GRID ─── */
+  .choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 2rem;
+  }
+  .choice-grid.two-col { grid-template-columns: 1fr 1fr; }
+  .choice-grid.one-col { grid-template-columns: 1fr; }
+
+  .choice-btn {
+    background: var(--white);
+    border: 1.5px solid rgba(122, 158, 126, 0.2);
+    padding: 1.1rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .choice-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--light-sage);
+    opacity: 0;
+    transition: opacity 0.22s;
+  }
+  .choice-btn:hover { border-color: var(--sage); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(44,74,53,0.08); }
+  .choice-btn:hover::before { opacity: 1; }
+  .choice-btn.selected { border-color: var(--deep-green); background: var(--light-sage); }
+  .choice-btn.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+    font-size: 0.75rem;
+    color: var(--deep-green);
+    font-weight: 700;
+  }
+
+  .choice-icon { font-size: 1.4rem; flex-shrink: 0; position: relative; z-index: 1; line-height: 1; margin-top: 1px; }
+  .choice-text { position: relative; z-index: 1; }
+  .choice-label {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--charcoal);
+    line-height: 1.3;
+    margin-bottom: 0.15rem;
+  }
+  .choice-hint {
+    font-size: 0.76rem;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.4;
+  }
+
+  /* multi-select note */
+  .multi-note {
+    font-size: 0.73rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  /* ─── SLIDER QUESTION ─── */
+  .slider-wrap { margin-bottom: 2rem; }
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: rgba(122,158,126,0.25);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--deep-green);
+    border: 3px solid var(--cream);
+    box-shadow: 0 0 0 1.5px var(--deep-green);
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .slider-value {
+    text-align: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--deep-green);
+    margin-top: 0.6rem;
+  }
+
+  /* ─── NAV BUTTONS ─── */
+  .quiz-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+  .btn-next {
+    background: var(--deep-green);
+    color: var(--cream);
+    border: none;
+    padding: 0.9rem 2.2rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-next::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--sage);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .btn-next:hover::before { transform: translateX(0); }
+  .btn-next span { position: relative; z-index: 1; }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-next:disabled::before { display: none; }
+
+  .btn-back {
+    background: transparent;
+    border: 1.5px solid rgba(122,158,126,0.35);
+    color: var(--muted);
+    padding: 0.9rem 1.4rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { border-color: var(--sage); color: var(--deep-green); }
+
+  .skip-link {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    margin-left: auto;
+    transition: color 0.2s;
+  }
+  .skip-link:hover { color: var(--charcoal); }
+
+  /* ─── TRUST BADGES ─── */
+  .trust-row {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: 3rem;
+    flex-wrap: wrap;
+  }
+  .trust-pill {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  /* ─── DISCLAIMER ─── */
+  .disclaimer {
+    width: 100%;
+    max-width: 680px;
+    margin-top: 2.5rem;
+    padding: 0.9rem 1.2rem;
+    border: 1px solid rgba(122, 158, 126, 0.2);
+    background: rgba(253, 252, 249, 0.6);
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    opacity: 0;
+    animation: fadeUp 0.5s ease 0.5s forwards;
+  }
+  .disclaimer-icon { font-size: 0.85rem; flex-shrink: 0; margin-top: 1px; opacity: 0.6; }
+  .disclaimer p {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .disclaimer strong { font-weight: 500; color: var(--charcoal); }
+
+  /* ─── LOADING ─── */
+  .loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .loading-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-weight: 300;
+    color: var(--deep-green);
+    text-align: center;
+  }
+  .loading-sub { font-size: 0.88rem; color: var(--muted); text-align: center; line-height: 1.7; }
+  .loading-dots {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .loading-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sage);
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; background: var(--deep-green); }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; background: var(--gold); }
+  .loading-steps { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+  .loading-step {
+    font-size: 0.82rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.4s ease;
+  }
+  .loading-step.done { opacity: 1; transform: translateX(0); color: var(--deep-green); }
+  .loading-step .ls-icon { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; flex-shrink: 0; }
+
+  /* ─── RESULTS ─── */
+  .results-screen {
+    width: 100%;
+    max-width: 800px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease 0.1s forwards;
+  }
+  .results-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  .results-label {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--sage);
+    border: 1px solid var(--sage);
+    padding: 0.3rem 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+  .results-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 4vw, 3.5rem);
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--deep-green);
+    margin-bottom: 0.8rem;
+  }
+  .results-header h2 em { font-style: italic; color: var(--warm-brown); }
+  .results-header p { font-size: 0.95rem; color: var(--muted); font-weight: 300; line-height: 1.7; max-width: 500px; margin: 0 auto; }
+
+  /* Profile summary */
+  .profile-summary {
+    background: var(--white);
+    border: 1px solid rgba(122,158,126,0.2);
+    padding: 1.5rem 1.8rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+  }
+  .profile-tag {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--charcoal);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .profile-tag strong { color: var(--deep-green); font-weight: 500; }
+
+  .stack-grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .stack-card {
+    background: var(--white);
+    border: 1.5px solid rgba(122,158,126,0.18);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0 1.4rem;
+    padding: 1.4rem 1.6rem;
+    align-items: center;
+    position: relative;
+    transition: all 0.22s ease;
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  .stack-card:hover { border-color: var(--sage); box-shadow: 0 8px 32px rgba(44,74,53,0.08); transform: translateY(-2px) !important; }
+  .stack-card.primary { border-color: var(--deep-green); }
+  .stack-card .core-badge {
+    position: absolute;
+    top: -1px;
+    left: 1.4rem;
+    background: var(--deep-green);
+    color: var(--cream);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.18rem 0.55rem;
+  }
+
+  .stack-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .stack-body {}
+  .stack-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--deep-green);
+    margin-bottom: 0.2rem;
+  }
+  .stack-why {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.5;
+    margin-bottom: 0.4rem;
+  }
+  .stack-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .stack-tag {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sage);
+    border: 1px solid rgba(122,158,126,0.35);
+    padding: 0.15rem 0.5rem;
+  }
+
+  .stack-price-side { text-align: right; flex-shrink: 0; }
+  .stack-price { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--charcoal); }
+  .stack-rating { font-size: 0.75rem; color: var(--gold); margin-top: 0.1rem; }
+  .btn-add-stack {
+    margin-top: 0.5rem;
+    background: var(--deep-green);
+    color: var(--cream);
+    border: none;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add-stack:hover { background: var(--sage); }
+
+  .match-score {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--deep-green);
+    font-weight: 500;
+    margin-top: 0.3rem;
+  }
+  .match-bar {
+    height: 3px;
+    background: rgba(122,158,126,0.2);
+    flex: 1;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .match-bar-fill { height: 100%; background: var(--sage); border-radius: 2px; }
+
+  /* Results footer */
+  .results-footer {
+    text-align: center;
+    padding: 2rem 0 1rem;
+    border-top: 1px solid rgba(122,158,126,0.15);
+  }
+  .results-footer p { font-size: 0.82rem; color: var(--muted); line-height: 1.7; margin-bottom: 1.2rem; }
+  .btn-all-stack {
+    background: transparent;
+    border: 1.5px solid var(--deep-green);
+    color: var(--deep-green);
+    padding: 0.8rem 2rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .btn-all-stack:hover { background: var(--deep-green); color: var(--cream); }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes dotPulse {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1.1); opacity: 1; }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .page-transition-out {
+    animation: slideOut 0.3s ease forwards;
+  }
+  @keyframes slideOut {
+    to { opacity: 0; transform: translateX(-30px); }
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 600px) {
+    .choice-grid { grid-template-columns: 1fr; }
+    .choice-grid.two-col { grid-template-columns: 1fr; }
+    .stack-card { grid-template-columns: auto 1fr; grid-template-rows: auto auto; }
+    .stack-price-side { grid-column: 2; grid-row: 2; text-align: left; display: flex; align-items: center; gap: 1rem; }
+    nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">Nut<span>ree</span></a>
+    <span class="header-tag">✦ Personalised Stack Finder</span>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+  </div>
+</header>
+
+<div class="quiz-wrapper" id="quizWrapper">
+  <!-- Steps injected by JS -->
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const PRODUCTS = [
+  {
+    id: 'ashwagandha',
+    name: 'Ashwagandha KSM-66',
+    category: 'Stress & Calm',
+    icon: '🌿',
+    iconBg: '#E8F0E9',
+    price: '€38.00',
+    rating: '4.9',
+    stars: '★★★★★',
+    desc: 'Clinically-studied adaptogen for cortisol balance & calm focus.',
+    tags: ['Adaptogen', 'Cortisol', 'Focus'],
+    scores: { stress: 10, sleep: 5, energy: 4, focus: 7, immunity: 2, gut: 0, longevity: 5 }
+  },
+  {
+    id: 'magnesium',
+    name: 'Magnesium Glycinate',
+    category: 'Sleep & Recovery',
+    icon: '🌙',
+    iconBg: '#EEE8F8',
+    price: '€34.00',
+    rating: '4.8',
+    stars: '★★★★★',
+    desc: 'Highly bioavailable form for deep sleep, muscle recovery & calm.',
+    tags: ['Sleep', 'Recovery', 'Calm'],
+    scores: { stress: 7, sleep: 10, energy: 3, focus: 4, immunity: 2, gut: 1, longevity: 4 }
+  },
+  {
+    id: 'vitd3k2',
+    name: 'Vitamin D3 + K2',
+    category: 'Immunity & Bone',
+    icon: '☀️',
+    iconBg: '#FFF7E6',
+    price: '€29.00',
+    rating: '4.7',
+    stars: '★★★★★',
+    desc: '5000 IU D3 with MK-7 K2. Immunity, bones, mood & cardiovascular.',
+    tags: ['Immunity', 'Mood', 'Bone'],
+    scores: { stress: 3, sleep: 3, energy: 5, focus: 3, immunity: 10, gut: 0, longevity: 8 }
+  },
+  {
+    id: 'omega3',
+    name: 'Omega-3 Ultra Pure',
+    category: 'Brain & Heart',
+    icon: '🐟',
+    iconBg: '#E6F4FA',
+    price: '€44.00',
+    rating: '4.8',
+    stars: '★★★★★',
+    desc: 'Triglyceride-form EPA/DHA for brain, heart & inflammation balance.',
+    tags: ['Brain', 'Heart', 'Anti-inflammatory'],
+    scores: { stress: 4, sleep: 4, energy: 3, focus: 8, immunity: 5, gut: 0, longevity: 9 }
+  },
+  {
+    id: 'lions-mane',
+    name: "Lion's Mane Extract",
+    category: 'Cognitive Focus',
+    icon: '🧠',
+    iconBg: '#F0EFF8',
+    price: '€52.00',
+    rating: '4.9',
+    stars: '★★★★★',
+    desc: '40% beta-glucan. Nerve growth factor for memory, clarity & focus.',
+    tags: ['NGF', 'Memory', 'Clarity'],
+    scores: { stress: 3, sleep: 2, energy: 5, focus: 10, immunity: 4, gut: 2, longevity: 7 }
+  },
+  {
+    id: 'b-complex',
+    name: 'B-Complex Ultra',
+    category: 'Energy & Vitality',
+    icon: '⚡',
+    iconBg: '#FFFDE7',
+    price: '€32.00',
+    rating: '4.7',
+    stars: '★★★★★',
+    desc: 'Methylated B vitamins for clean energy, metabolism & stress resilience.',
+    tags: ['Energy', 'Metabolism', 'Mood'],
+    scores: { stress: 6, sleep: 2, energy: 10, focus: 6, immunity: 3, gut: 0, longevity: 5 }
+  },
+  {
+    id: 'probiotics',
+    name: 'Gut Harmony Probiotic',
+    category: 'Gut Health',
+    icon: '🦠',
+    iconBg: '#E8F5E9',
+    price: '€52.00',
+    rating: '4.9',
+    stars: '★★★★★',
+    desc: '50 Billion CFU, 15 strains. Time-release capsule technology.',
+    tags: ['Gut', 'Digestion', 'Microbiome'],
+    scores: { stress: 4, sleep: 3, energy: 4, focus: 3, immunity: 7, gut: 10, longevity: 5 }
+  },
+  {
+    id: 'nmn',
+    name: 'NMN + Resveratrol',
+    category: 'Longevity',
+    icon: '⏳',
+    iconBg: '#FBE9E7',
+    price: '€89.00',
+    rating: '4.8',
+    stars: '★★★★★',
+    desc: '500mg NMN with trans-resveratrol. NAD+ precursor for cellular energy & longevity.',
+    tags: ['NAD+', 'Longevity', 'Cellular'],
+    scores: { stress: 3, sleep: 4, energy: 8, focus: 5, immunity: 4, gut: 0, longevity: 10 }
+  },
+  {
+    id: 'collagen',
+    name: 'Marine Collagen Peptides',
+    category: 'Skin & Joints',
+    icon: '🐚',
+    iconBg: '#FFF3E0',
+    price: '€46.00',
+    rating: '4.7',
+    stars: '★★★★★',
+    desc: 'Hydrolysed type I & III collagen for skin elasticity, joints & gut lining.',
+    tags: ['Skin', 'Joints', 'Gut lining'],
+    scores: { stress: 2, sleep: 2, energy: 2, focus: 1, immunity: 3, gut: 5, longevity: 8 }
+  },
+  {
+    id: 'zinc',
+    name: 'Zinc Bisglycinate + C',
+    category: 'Immunity',
+    icon: '🛡️',
+    iconBg: '#E3F2FD',
+    price: '€26.00',
+    rating: '4.6',
+    stars: '★★★★☆',
+    desc: 'Chelated zinc + vitamin C for immune defence, skin & testosterone support.',
+    tags: ['Immunity', 'Skin', 'Hormones'],
+    scores: { stress: 2, sleep: 2, energy: 4, focus: 2, immunity: 9, gut: 1, longevity: 4 }
+  },
+  {
+    id: 'l-theanine',
+    name: 'L-Theanine 200mg',
+    category: 'Focus & Calm',
+    icon: '🍵',
+    iconBg: '#E8F5E9',
+    price: '€28.00',
+    rating: '4.8',
+    stars: '★★★★★',
+    desc: 'Promotes alpha brain waves — calm, focussed alertness without sedation.',
+    tags: ['Focus', 'Calm', 'Alertness'],
+    scores: { stress: 8, sleep: 6, energy: 3, focus: 9, immunity: 0, gut: 0, longevity: 3 }
+  },
+  {
+    id: 'coq10',
+    name: 'CoQ10 Ubiquinol 200mg',
+    category: 'Energy & Longevity',
+    icon: '💫',
+    iconBg: '#FFF8E1',
+    price: '€58.00',
+    rating: '4.7',
+    stars: '★★★★★',
+    desc: 'Active form of CoQ10 for mitochondrial energy, heart health & antioxidant defence.',
+    tags: ['Mitochondria', 'Heart', 'Energy'],
+    scores: { stress: 2, sleep: 2, energy: 9, focus: 5, immunity: 3, gut: 0, longevity: 9 }
+  }
+];
+
+// ─── QUESTIONS ──────────────────────────────────────────────────────────────
+
+const QUESTIONS = [
+  {
+    id: 'goals',
+    type: 'multi',
+    title: 'What are your <em>main goals</em> right now?',
+    sub: 'Select all that apply — your stack will cover all of them.',
+    choices: [
+      { value: 'energy', label: 'More energy', hint: 'Beat afternoon slumps, feel consistently alert', icon: '⚡', scores: { energy: 10, longevity: 3 } },
+      { value: 'focus', label: 'Sharper focus', hint: 'Memory, mental clarity, deep work', icon: '🎯', scores: { focus: 10, stress: 3 } },
+      { value: 'sleep', label: 'Better sleep', hint: 'Fall asleep faster, wake refreshed', icon: '🌙', scores: { sleep: 10, stress: 4 } },
+      { value: 'stress', label: 'Stress & anxiety', hint: 'Calmer, more resilient mind', icon: '🧘', scores: { stress: 10, sleep: 3 } },
+      { value: 'immunity', label: 'Immune support', hint: 'Stay well, recover faster', icon: '🛡️', scores: { immunity: 10 } },
+      { value: 'gut', label: 'Gut health', hint: 'Digestion, bloating, microbiome', icon: '🌿', scores: { gut: 10 } },
+      { value: 'longevity', label: 'Longevity', hint: 'Slow ageing, cellular health', icon: '⏳', scores: { longevity: 10, energy: 3 } },
+    ]
+  },
+  {
+    id: 'lifestyle',
+    type: 'single',
+    title: 'How would you describe your <em>daily pace</em>?',
+    sub: 'This helps us understand your stress load and recovery needs.',
+    choices: [
+      { value: 'high', label: 'High intensity', hint: 'Demanding job, long hours, always on', icon: '🔥', modifier: { stress: 4, energy: 3, sleep: 2 } },
+      { value: 'moderate', label: 'Moderate & balanced', hint: 'Busy but manageable most days', icon: '☀️', modifier: {} },
+      { value: 'active', label: 'Very physically active', hint: 'Training regularly, sport, outdoor life', icon: '🏃', modifier: { energy: 3, longevity: 2 } },
+      { value: 'calm', label: 'Slow & restorative', hint: 'Low stress, prioritise recovery', icon: '🌊', modifier: { longevity: 2, gut: 1 } },
+    ]
+  },
+  {
+    id: 'sleep_quality',
+    type: 'single',
+    title: 'How\'s your <em>sleep quality</em> been?',
+    sub: 'Be honest — this changes your entire protocol.',
+    choices: [
+      { value: 'poor', label: 'Poor', hint: 'Trouble falling or staying asleep', icon: '😴', modifier: { sleep: 6, stress: 3 } },
+      { value: 'fair', label: 'Fair', hint: 'Inconsistent, some nights are rough', icon: '🌙', modifier: { sleep: 3 } },
+      { value: 'good', label: 'Good', hint: 'Mostly fine, occasional issues', icon: '😊', modifier: {} },
+      { value: 'great', label: 'Great', hint: 'Sleep deeply and wake refreshed', icon: '✨', modifier: { longevity: 1 } },
+    ]
+  },
+  {
+    id: 'diet',
+    type: 'single',
+    title: 'How would you rate your <em>diet</em>?',
+    sub: 'Your nutritional gaps shape which supplements will have the highest impact.',
+    choices: [
+      { value: 'poor', label: 'Mostly processed', hint: 'Convenience food, irregular meals', icon: '🍔', modifier: { immunity: 4, gut: 5, energy: 3 } },
+      { value: 'average', label: 'Average', hint: 'Mix of healthy and less healthy', icon: '🍽️', modifier: { immunity: 2, gut: 2 } },
+      { value: 'good', label: 'Mostly whole foods', hint: 'Vegetables, protein, low processed', icon: '🥗', modifier: { longevity: 2 } },
+      { value: 'plant', label: 'Plant-based', hint: 'Vegetarian or vegan', icon: '🌱', modifier: { immunity: 3, energy: 3, longevity: 2 } },
+    ]
+  },
+  {
+    id: 'age',
+    type: 'slider',
+    title: 'And finally — your <em>age</em>?',
+    sub: "Your body's needs shift with each decade. This fine-tunes your recommendations.",
+    min: 18,
+    max: 75,
+    default: 32,
+    unit: 'years old'
+  }
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+let state = {
+  step: 0,
+  answers: {},
+  scores: { stress: 0, sleep: 0, energy: 0, focus: 0, immunity: 0, gut: 0, longevity: 0 }
+};
+
+// ─── ENGINE ──────────────────────────────────────────────────────────────────
+
+function computeRecommendations() {
+  const scores = { ...state.scores };
+
+  // Age modifier
+  const age = state.answers.age || 32;
+  if (age >= 40) { scores.longevity += 5; scores.energy += 2; }
+  if (age >= 50) { scores.longevity += 5; scores.immunity += 3; }
+  if (age < 30)  { scores.focus += 2; scores.energy += 2; }
+
+  // Diet modifiers
+  const diet = state.answers.diet;
+  if (diet === 'plant') scores.immunity += 3; // higher need for B12/D/Omega
+
+  // Rank products by relevance
+  const ranked = PRODUCTS.map(p => {
+    let total = 0;
+    for (const [k, v] of Object.entries(p.scores)) {
+      total += (scores[k] || 0) * v;
+    }
+    return { ...p, matchScore: total };
+  }).sort((a, b) => b.matchScore - a.matchScore);
+
+  // Top 4, deduplicate categories somewhat
+  const picked = [];
+  const usedCats = new Set();
+  for (const p of ranked) {
+    if (picked.length >= 4) break;
+    if (!usedCats.has(p.category) || picked.length < 3) {
+      picked.push(p);
+      usedCats.add(p.category);
+    }
+  }
+
+  // Normalize match scores to 60–100%
+  const maxScore = picked[0]?.matchScore || 1;
+  const minShow = maxScore * 0.4;
+  return picked.map(p => ({
+    ...p,
+    matchPct: Math.round(60 + 40 * (p.matchScore - minShow) / (maxScore - minShow || 1))
+  }));
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+
+function updateProgress() {
+  const pct = (state.step / QUESTIONS.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function renderStep(idx) {
+  updateProgress();
+  const wrapper = document.getElementById('quizWrapper');
+  const q = QUESTIONS[idx];
+
+  wrapper.innerHTML = '';
+
+  const stepEl = document.createElement('div');
+  stepEl.className = 'step-indicator';
+  stepEl.textContent = `Step ${idx + 1} of ${QUESTIONS.length}`;
+  wrapper.appendChild(stepEl);
+
+  const card = document.createElement('div');
+  card.className = 'question-card';
+
+  // Title
+  const h2 = document.createElement('h2');
+  h2.innerHTML = q.title;
+  card.appendChild(h2);
+
+  const sub = document.createElement('p');
+  sub.className = 'question-sub';
+  sub.textContent = q.sub;
+  card.appendChild(sub);
+
+  // ── SLIDER ──
+  if (q.type === 'slider') {
+    const sliderWrap = document.createElement('div');
+    sliderWrap.className = 'slider-wrap';
+
+    const labels = document.createElement('div');
+    labels.className = 'slider-labels';
+    labels.innerHTML = `<span>${q.min} yrs</span><span>${q.max} yrs</span>`;
+    sliderWrap.appendChild(labels);
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = q.min;
+    slider.max = q.max;
+    slider.value = state.answers[q.id] || q.default;
+
+    const valDisplay = document.createElement('div');
+    valDisplay.className = 'slider-value';
+    valDisplay.textContent = slider.value + ' ' + q.unit;
+
+    slider.addEventListener('input', () => {
+      valDisplay.textContent = slider.value + ' ' + q.unit;
+      state.answers[q.id] = parseInt(slider.value);
+    });
+
+    sliderWrap.appendChild(slider);
+    sliderWrap.appendChild(valDisplay);
+    card.appendChild(sliderWrap);
+
+    if (!state.answers[q.id]) state.answers[q.id] = q.default;
+
+  // ── CHOICE ──
+  } else {
+    if (q.type === 'multi') {
+      const note = document.createElement('div');
+      note.className = 'multi-note';
+      note.textContent = '✦ Select all that apply';
+      card.appendChild(note);
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'choice-grid' + (q.choices.length <= 4 ? ' two-col' : '');
+    if (q.choices.length === 1) grid.classList.add('one-col');
+
+    const selectedValues = new Set(
+      q.type === 'multi' ? (state.answers[q.id] || []) : (state.answers[q.id] ? [state.answers[q.id]] : [])
+    );
+
+    q.choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn' + (selectedValues.has(choice.value) ? ' selected' : '');
+      btn.innerHTML = `
+        <span class="choice-icon">${choice.icon}</span>
+        <span class="choice-text">
+          <span class="choice-label">${choice.label}</span>
+          <span class="choice-hint">${choice.hint}</span>
+        </span>
+      `;
+
+      btn.addEventListener('click', () => {
+        if (q.type === 'multi') {
+          btn.classList.toggle('selected');
+          const vals = Array.from(grid.querySelectorAll('.choice-btn.selected'))
+            .map(b => b.dataset.value);
+          state.answers[q.id] = vals;
+        } else {
+          grid.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          state.answers[q.id] = choice.value;
+        }
+        updateNextBtn();
+      });
+
+      btn.dataset.value = choice.value;
+      grid.appendChild(btn);
+    });
+
+    card.appendChild(grid);
+  }
+
+  // Nav
+  const nav = document.createElement('div');
+  nav.className = 'quiz-nav';
+
+  if (idx > 0) {
+    const back = document.createElement('button');
+    back.className = 'btn-back';
+    back.textContent = '← Back';
+    back.addEventListener('click', () => goToStep(idx - 1));
+    nav.appendChild(back);
+  }
+
+  const next = document.createElement('button');
+  next.className = 'btn-next';
+  next.id = 'nextBtn';
+  next.innerHTML = `<span>${idx === QUESTIONS.length - 1 ? 'See My Stack →' : 'Continue →'}</span>`;
+  next.addEventListener('click', () => advanceStep(idx, q));
+  nav.appendChild(next);
+
+  if (q.type !== 'slider' && q.type !== 'multi') {
+    const skip = document.createElement('span');
+    skip.className = 'skip-link';
+    skip.textContent = 'Skip';
+    skip.addEventListener('click', () => advanceStep(idx, q, true));
+    nav.appendChild(skip);
+  }
+
+  card.appendChild(nav);
+  wrapper.appendChild(card);
+
+  // Trust badges on first step
+  if (idx === 0) {
+    const trust = document.createElement('div');
+    trust.className = 'trust-row';
+    trust.innerHTML = `
+      <span class="trust-pill">🔒 Anonymous</span>
+      <span class="trust-pill">📋 No account needed</span>
+      <span class="trust-pill">✦ Expert-reviewed protocol</span>
+      <span class="trust-pill">⏱ 2 minutes</span>
+    `;
+    const discl = document.createElement('p');
+    discl.style.cssText = 'font-size:0.7rem;color:var(--muted);margin-top:1.5rem;max-width:480px;line-height:1.6;font-weight:300;';
+    discl.innerHTML = '⚕️ <em>For research & informational purposes only. Not medical advice. Consult a healthcare professional before starting any supplement.</em>';
+    wrapper.appendChild(trust);
+    wrapper.appendChild(discl);
+  }
+
+  updateNextBtn();
+}
+
+function updateNextBtn() {
+  const btn = document.getElementById('nextBtn');
+  if (!btn) return;
+  const q = QUESTIONS[state.step];
+  if (q.type === 'slider') { btn.disabled = false; return; }
+  const ans = state.answers[q.id];
+  if (q.type === 'multi') {
+    btn.disabled = !ans || ans.length === 0;
+  } else {
+    btn.disabled = !ans;
+  }
+}
+
+function applyAnswerScores(q, skip) {
+  if (skip) return;
+  const ans = state.answers[q.id];
+  if (!ans) return;
+
+  if (q.type === 'multi') {
+    ans.forEach(val => {
+      const choice = q.choices.find(c => c.value === val);
+      if (choice?.scores) {
+        for (const [k, v] of Object.entries(choice.scores)) {
+          state.scores[k] = (state.scores[k] || 0) + v;
+        }
+      }
+    });
+  } else if (q.type === 'single') {
+    const choice = q.choices.find(c => c.value === ans);
+    if (choice?.modifier) {
+      for (const [k, v] of Object.entries(choice.modifier)) {
+        state.scores[k] = (state.scores[k] || 0) + v;
+      }
+    }
+  }
+}
+
+function advanceStep(idx, q, skip = false) {
+  applyAnswerScores(q, skip);
+
+  if (idx === QUESTIONS.length - 1) {
+    showLoading();
+  } else {
+    goToStep(idx + 1);
+  }
+}
+
+function goToStep(idx) {
+  state.step = idx;
+  renderStep(idx);
+}
+
+// ─── LOADING ─────────────────────────────────────────────────────────────────
+
+function showLoading() {
+  document.getElementById('progressBar').style.width = '95%';
+  const wrapper = document.getElementById('quizWrapper');
+  wrapper.innerHTML = `
+    <div class="loading-screen">
+      <div class="loading-title">Analysing your <em style="font-style:italic;color:var(--warm-brown)">unique profile…</em></div>
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <div class="loading-steps">
+        <div class="loading-step" id="ls1"><span class="ls-icon">○</span> Mapping your goals & lifestyle</div>
+        <div class="loading-step" id="ls2"><span class="ls-icon">○</span> Identifying nutritional gaps</div>
+        <div class="loading-step" id="ls3"><span class="ls-icon">○</span> Matching 200+ bioactive compounds</div>
+        <div class="loading-step" id="ls4"><span class="ls-icon">○</span> Building your personalised stack</div>
+      </div>
+      <p class="loading-sub">Our nutritionist protocol is reviewing <strong>12 supplement categories</strong> against your answers.</p>
+    </div>
+  `;
+
+  const steps = ['ls1','ls2','ls3','ls4'];
+  steps.forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('done');
+        el.querySelector('.ls-icon').textContent = '✓';
+      }
+    }, 600 + i * 700);
+  });
+
+  setTimeout(() => showResults(), 3800);
+}
+
+// ─── RESULTS ─────────────────────────────────────────────────────────────────
+
+function showResults() {
+  document.getElementById('progressBar').style.width = '100%';
+  const recs = computeRecommendations();
+  const wrapper = document.getElementById('quizWrapper');
+
+  // Build profile summary
+  const goals = state.answers.goals || [];
+  const lifestyle = state.answers.lifestyle || 'moderate';
+  const age = state.answers.age || 32;
+  const dietMap = { poor:'Mostly processed', average:'Average diet', good:'Whole foods', plant:'Plant-based' };
+  const lifestyleMap = { high:'High intensity', moderate:'Moderate', active:'Very active', calm:'Slow & restorative' };
+
+  const profileTags = [
+    goals.length ? `🎯 Goals: ${goals.join(', ')}` : null,
+    `🏃 Pace: ${lifestyleMap[lifestyle]}`,
+    `🎂 Age: ${age}`,
+    state.answers.diet ? `🥗 Diet: ${dietMap[state.answers.diet]}` : null,
+    state.answers.sleep_quality ? `🌙 Sleep: ${state.answers.sleep_quality}` : null,
+  ].filter(Boolean);
+
+  wrapper.innerHTML = '';
+
+  const screen = document.createElement('div');
+  screen.className = 'results-screen';
+
+  screen.innerHTML = `
+    <div class="results-header">
+      <span class="results-label">✦ Your personalised protocol</span>
+      <h2>Your <em>perfect stack</em><br>is ready.</h2>
+      <p>Based on your goals, lifestyle and biology — here are the supplements our nutritionist protocol selected for you.</p>
+    </div>
+    <div class="profile-summary">
+      ${profileTags.map(t => `<span class="profile-tag">${t}</span>`).join('')}
+    </div>
+    <div class="stack-grid" id="stackGrid"></div>
+    <div class="results-footer">
+      <p>All Nutree products ship within 48 hours. Free delivery on orders over €60. 30-day money-back guarantee on your first stack.</p>
+      <button class="btn-all-stack">Add Full Stack to Cart — Save 15%</button>
+    </div>
+    <div class="disclaimer">
+      <span class="disclaimer-icon">ℹ️</span>
+      <p><strong>For informational purposes only.</strong> These recommendations are based on general wellness research and are not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider before starting any supplement regimen, especially if you are pregnant, nursing, have a medical condition, or take prescription medication.</p>
+    </div>
+  `;
+
+  wrapper.appendChild(screen);
+
+  // Render cards
+  const grid = screen.querySelector('#stackGrid');
+  recs.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'stack-card' + (i === 0 ? ' primary' : '');
+    if (i === 0) card.innerHTML += `<span class="core-badge">Core Recommendation</span>`;
+
+    card.innerHTML += `
+      <div class="stack-icon-wrap" style="background:${p.iconBg}">${p.icon}</div>
+      <div class="stack-body">
+        <div class="stack-name">${p.name}</div>
+        <div class="stack-why">${p.desc}</div>
+        <div class="stack-tags">${p.tags.map(t => `<span class="stack-tag">${t}</span>`).join('')}</div>
+        <div class="match-score">
+          <span>${p.matchPct}% match</span>
+          <div class="match-bar"><div class="match-bar-fill" style="width:${p.matchPct}%"></div></div>
+        </div>
+      </div>
+      <div class="stack-price-side">
+        <div class="stack-price">${p.price}</div>
+        <div class="stack-rating">${p.stars} ${p.rating}</div>
+        <button class="btn-add-stack">Add to Cart</button>
+      </div>
+    `;
+
+    grid.appendChild(card);
+
+    // Stagger animation
+    setTimeout(() => {
+      card.style.transition = 'opacity 0.5s ease, transform 0.5s ease, box-shadow 0.22s ease, border-color 0.22s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, 100 + i * 150);
+  });
+
+  // Button handlers
+  screen.querySelector('.btn-all-stack').addEventListener('click', () => {
+    screen.querySelector('.btn-all-stack').textContent = `✓ Stack Added — ${recs.length} items in cart`;
+    screen.querySelector('.btn-all-stack').style.background = 'var(--deep-green)';
+    screen.querySelector('.btn-all-stack').style.color = 'var(--cream)';
+  });
+
+  screen.querySelectorAll('.btn-add-stack').forEach(btn => {
+    btn.addEventListener('click', function() {
+      this.textContent = '✓ Added';
+      this.style.background = 'var(--sage)';
+    });
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
+renderStep(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Find My Perfect Stack — Nutree</title>
+<style>
+  :root {
+    --bg: #0b0c0e;
+    --surface: #13141a;
+    --card: #1a1c24;
+    --border: rgba(255,255,255,0.07);
+    --accent: #b5f23d;
+    --accent2: #6ee7b7;
+    --text: #f0f0f0;
+    --muted: #888;
+    --radius: 16px;
+    --progress-h: 4px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+
+  /* ─── TRIGGER BUTTON ─── */
+  .trigger-btn {
+    background: var(--accent); color: #0b0c0e; font-weight: 700; font-size: 1rem;
+    border: none; border-radius: 50px; padding: 16px 32px; cursor: pointer;
+    transition: transform .15s, box-shadow .15s; letter-spacing: .02em;
+  }
+  .trigger-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(181,242,61,.35); }
+
+  /* ─── OVERLAY ─── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(6px);
+    z-index: 999; display: flex; align-items: center; justify-content: center; padding: 16px;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .overlay.active { opacity: 1; pointer-events: all; }
+
+  /* ─── POPUP ─── */
+  .popup {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
+    transform: translateY(20px) scale(.97); transition: transform .3s;
+    position: relative; padding: 36px 32px 32px;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .overlay.active .popup { transform: translateY(0) scale(1); }
+
+  /* ─── CLOSE ─── */
+  .close-btn {
+    position: absolute; top: 16px; right: 18px; background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: color .15s;
+  }
+  .close-btn:hover { color: var(--text); }
+
+  /* ─── PROGRESS ─── */
+  .progress-wrap { margin-bottom: 28px; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-bottom: 8px; }
+  .progress-bar { height: var(--progress-h); background: var(--card); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 99px; transition: width .4s ease; }
+
+  /* ─── STEP HEADER ─── */
+  .step-tag { font-size: .7rem; letter-spacing: .1em; color: var(--accent); text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
+  .step-question { font-size: 1.25rem; font-weight: 700; line-height: 1.4; margin-bottom: 6px; }
+  .step-sub { font-size: .875rem; color: var(--muted); margin-bottom: 24px; }
+
+  /* ─── OPTION CARDS ─── */
+  .options { display: grid; gap: 10px; }
+  .options.cols-2 { grid-template-columns: 1fr 1fr; }
+  .option-card {
+    background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; cursor: pointer; transition: border-color .15s, background .15s, transform .1s;
+    display: flex; align-items: flex-start; gap: 12px; text-align: left;
+  }
+  .option-card:hover { border-color: rgba(181,242,61,.4); background: rgba(181,242,61,.05); }
+  .option-card.selected { border-color: var(--accent); background: rgba(181,242,61,.08); }
+  .option-card.selected .opt-check { background: var(--accent); border-color: var(--accent); color: #0b0c0e; }
+  .opt-emoji { font-size: 1.5rem; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+  .opt-body { flex: 1; }
+  .opt-label { font-size: .9rem; font-weight: 600; }
+  .opt-desc { font-size: .77rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .opt-check {
+    width: 20px; height: 20px; border: 1.5px solid var(--border); border-radius: 50%;
+    flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; transition: all .15s;
+  }
+  /* Multi-select badge */
+  .multi-hint { font-size: .73rem; color: var(--muted); margin-bottom: 14px; }
+
+  /* ─── SLIDER ─── */
+  .slider-wrap { padding: 4px 0 20px; }
+  .slider-labels { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-bottom: 6px; }
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 6px; border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent) var(--pct, 50%), var(--card) var(--pct, 50%));
+    outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--bg); box-shadow: 0 0 0 2px var(--accent);
+  }
+  .slider-value { text-align: center; margin-top: 10px; font-weight: 700; color: var(--accent); font-size: 1.05rem; }
+
+  /* ─── NAV BUTTONS ─── */
+  .nav { display: flex; gap: 10px; margin-top: 28px; }
+  .btn-back {
+    flex: 0 0 auto; background: var(--card); border: 1px solid var(--border); color: var(--text);
+    padding: 12px 20px; border-radius: 50px; cursor: pointer; font-size: .9rem; transition: background .15s;
+  }
+  .btn-back:hover { background: rgba(255,255,255,.07); }
+  .btn-next {
+    flex: 1; background: var(--accent); color: #0b0c0e; font-weight: 700;
+    padding: 13px 20px; border-radius: 50px; border: none; cursor: pointer;
+    font-size: .95rem; transition: opacity .15s, transform .1s;
+  }
+  .btn-next:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+  .btn-next:not(:disabled):hover { transform: translateY(-1px); }
+
+  /* ─── ANALYSING ─── */
+  .analysing { text-align: center; padding: 24px 0; }
+  .analysing .spinner {
+    width: 52px; height: 52px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .8s linear infinite; margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .analysing h3 { font-size: 1.1rem; margin-bottom: 8px; }
+  .analysing p { font-size: .85rem; color: var(--muted); }
+  .analysing .dots span { animation: blink 1.2s infinite; display: inline-block; }
+  .analysing .dots span:nth-child(2) { animation-delay: .2s; }
+  .analysing .dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+  /* ─── RESULTS ─── */
+  .result-header { text-align: center; margin-bottom: 28px; }
+  .result-header .badge { display: inline-block; background: rgba(181,242,61,.12); border: 1px solid rgba(181,242,61,.3); color: var(--accent); font-size: .73rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 5px 12px; border-radius: 99px; margin-bottom: 14px; }
+  .result-header h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+  .result-header p { font-size: .88rem; color: var(--muted); }
+
+  .result-cards { display: grid; gap: 12px; margin-bottom: 24px; }
+  .result-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; display: flex; gap: 14px; align-items: flex-start;
+    animation: fadeUp .4s ease both;
+  }
+  .result-card:nth-child(2) { animation-delay: .08s; }
+  .result-card:nth-child(3) { animation-delay: .16s; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+  .rc-emoji { font-size: 2rem; flex-shrink: 0; }
+  .rc-body { flex: 1; }
+  .rc-name { font-weight: 700; font-size: 1rem; margin-bottom: 2px; }
+  .rc-why { font-size: .8rem; color: var(--accent2); margin-bottom: 4px; font-weight: 500; }
+  .rc-desc { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+  .rc-match { font-size: .72rem; font-weight: 700; color: var(--accent); background: rgba(181,242,61,.1); padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+
+  .result-cta { width: 100%; background: var(--accent); color: #0b0c0e; font-weight: 700; font-size: 1rem; border: none; border-radius: 50px; padding: 15px; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+  .result-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(181,242,61,.35); }
+  .result-footer { text-align: center; font-size: .75rem; color: var(--muted); margin-top: 12px; }
+
+  .match-bar-wrap { margin-top: 8px; }
+  .match-bar-bg { height: 4px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .match-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 99px; transition: width 1s ease .5s; }
+
+  @media (max-width: 480px) {
+    .popup { padding: 28px 18px 24px; }
+    .options.cols-2 { grid-template-columns: 1fr; }
+    .step-question { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Page preview trigger -->
+<div style="text-align:center; padding: 60px 20px;">
+  <p style="color:var(--muted); font-size:.85rem; margin-bottom:24px;">Nutree · Find My Perfect Stack</p>
+  <button class="trigger-btn" id="openQuiz">Find My Perfect Stack →</button>
+  <p style="color:var(--muted); font-size:.75rem; margin-top:12px;">Taken by 34,200 people this year</p>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="popup" id="popup">
+    <button class="close-btn" id="closeBtn">✕</button>
+    <div id="quizContent"></div>
+
+<div style="border-top: 1px solid var(--border); margin-top: 20px; padding-top: 12px; text-align:center; font-size:.7rem; color:var(--muted); line-height:1.6;">
+  Not medical advice · For research &amp; informational purposes only · Consult your doctor before supplementing.
+</div>
+
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════════════════
+//  QUIZ DATA
+// ══════════════════════════════════════════════════════
+const steps = [
+  {
+    id: "goal",
+    tag: "Question 1 of 5",
+    question: "What's your primary health goal right now?",
+    sub: "Pick the one that matters most to you today.",
+    type: "single",
+    options: [
+      { emoji: "⚡", label: "More Energy & Focus", desc: "Beat the afternoon crash, stay sharp", value: "energy" },
+      { emoji: "🧘", label: "Stress & Calm", desc: "Manage stress, reduce anxiety", value: "stress" },
+      { emoji: "🌙", label: "Better Sleep", desc: "Fall asleep faster, wake refreshed", value: "sleep" },
+      { emoji: "💪", label: "Strength & Performance", desc: "Support training & recovery", value: "performance" },
+      { emoji: "🛡️", label: "Immune Defence", desc: "Stay well through every season", value: "immune" },
+      { emoji: "🔬", label: "Longevity & Anti-Ageing", desc: "Cellular health & long-term vitality", value: "longevity" },
+    ]
+  },
+  {
+    id: "issues",
+    tag: "Question 2 of 5",
+    question: "Which of these do you experience regularly?",
+    sub: "Select all that apply.",
+    type: "multi",
+    options: [
+      { emoji: "😴", label: "Poor sleep or insomnia", value: "sleep" },
+      { emoji: "🌀", label: "Brain fog or low focus", value: "brain" },
+      { emoji: "😤", label: "Stress or overwhelm", value: "stress" },
+      { emoji: "🤢", label: "Bloating or gut issues", value: "gut" },
+      { emoji: "🦴", label: "Joint or bone discomfort", value: "joints" },
+      { emoji: "💔", label: "Low mood or motivation", value: "mood" },
+      { emoji: "🤒", label: "Frequent colds or illness", value: "immune" },
+      { emoji: "⚡", label: "Fatigue or low energy", value: "energy" },
+    ]
+  },
+  {
+    id: "lifestyle",
+    tag: "Question 3 of 5",
+    question: "How would you describe your typical week?",
+    sub: "Choose the one that fits best.",
+    type: "single",
+    options: [
+      { emoji: "💼", label: "High-pressure, desk-heavy", desc: "Long hours, high cognitive demand", value: "sedentary_stress" },
+      { emoji: "🏃", label: "Active & sporty", desc: "Regular gym or sport sessions", value: "active" },
+      { emoji: "👨‍👩‍👧", label: "Busy parent or carer", desc: "Always on, rarely resting", value: "busy" },
+      { emoji: "🌿", label: "Wellness-focused", desc: "Mindful, balanced routine", value: "wellness" },
+    ]
+  },
+  {
+    id: "diet",
+    tag: "Question 4 of 5",
+    question: "What does your diet look like?",
+    sub: "Be honest — we won't judge.",
+    type: "single",
+    options: [
+      { emoji: "🥦", label: "Mostly whole foods", desc: "Vegetables, proteins, minimal processed", value: "clean" },
+      { emoji: "🍕", label: "Mixed / on-the-go", desc: "Some healthy, some convenient", value: "mixed" },
+      { emoji: "🌱", label: "Vegan or vegetarian", desc: "Plant-based diet", value: "vegan" },
+      { emoji: "🥩", label: "High protein / Keto", desc: "Meat-forward, low carb", value: "highprot" },
+    ]
+  },
+  {
+    id: "age",
+    tag: "Question 5 of 5",
+    question: "What's your age range?",
+    sub: "Nutritional needs shift significantly across decades.",
+    type: "single",
+    options: [
+      { emoji: "🧑", label: "18–29", desc: "Building foundations", value: "young" },
+      { emoji: "🧑‍💼", label: "30–44", desc: "Optimising performance", value: "mid" },
+      { emoji: "🧑‍🦳", label: "45–59", desc: "Maintaining vitality", value: "late" },
+      { emoji: "👴", label: "60+", desc: "Longevity & resilience", value: "senior" },
+    ]
+  }
+];
+
+// ══════════════════════════════════════════════════════
+//  RECOMMENDER ENGINE
+// ══════════════════════════════════════════════════════
+const products = {
+  "Adaptogen": {
+    emoji: "🌿",
+    desc: "Ashwagandha KSM-66 — 600mg root extract. Reduces stress & supports cortisol balance.",
+    triggers: { goals: ["stress","energy","performance"], issues: ["stress","energy","mood"], lifestyles: ["sedentary_stress","busy","active"], ages: ["mid","late","senior"] }
+  },
+  "Sleep Formula": {
+    emoji: "🌙",
+    desc: "Magnesium Glycinate, L-Theanine & Valerian. Non-habit forming deep sleep support.",
+    triggers: { goals: ["sleep","stress"], issues: ["sleep","stress","mood"], lifestyles: ["sedentary_stress","busy","wellness"], ages: ["mid","late","senior","young"] }
+  },
+  "Lion's Mane Nootropic": {
+    emoji: "🧠",
+    desc: "Full-spectrum mycelium. Supports NGF production, memory & neural plasticity.",
+    triggers: { goals: ["energy","longevity"], issues: ["brain","mood","energy"], lifestyles: ["sedentary_stress","active","wellness"], ages: ["young","mid","late"] }
+  },
+  "Gut Health Probiotic": {
+    emoji: "🦠",
+    desc: "50 Billion CFU, 15 strains. Time-release capsule for lasting microbiome support.",
+    triggers: { goals: ["immune","energy"], issues: ["gut","immune","mood"], lifestyles: ["busy","wellness","sedentary_stress"], ages: ["young","mid","late","senior"], diets: ["vegan","mixed"] }
+  },
+  "Vitamin D3 + K2": {
+    emoji: "☀️",
+    desc: "5,000 IU D3 + 200mcg MK-7. Bone density, immune defence & heart synergy.",
+    triggers: { goals: ["immune","longevity","performance"], issues: ["immune","joints","energy"], lifestyles: ["sedentary_stress","busy","wellness"], ages: ["mid","late","senior","young"], diets: ["vegan","clean"] }
+  },
+  "Omega-3 Essential Fats": {
+    emoji: "🐟",
+    desc: "2,400mg EPA+DHA from MSC-certified wild fish. Anti-inflammatory. Molecularly distilled.",
+    triggers: { goals: ["performance","longevity","immune"], issues: ["joints","mood","brain","energy"], lifestyles: ["active","sedentary_stress","wellness"], ages: ["mid","late","senior"], diets: ["clean","highprot"] }
+  },
+  "NMN + Resveratrol": {
+    emoji: "⚡",
+    desc: "500mg pharmaceutical-grade NMN + Resveratrol. Cellular energy & longevity pathways.",
+    triggers: { goals: ["longevity","energy","performance"], issues: ["energy","brain","mood"], lifestyles: ["wellness","active"], ages: ["late","senior","mid"] }
+  },
+  "Bilberry Antioxidant": {
+    emoji: "🫐",
+    desc: "High-potency anthocyanins for cognitive clarity, eye health & oxidative protection.",
+    triggers: { goals: ["energy","longevity"], issues: ["brain","energy"], lifestyles: ["sedentary_stress","wellness","active"], ages: ["young","mid","late","senior"] }
+  }
+};
+
+function scoreProducts(answers) {
+  const scores = {};
+  const whys = {};
+
+  Object.entries(products).forEach(([name, p]) => {
+    let score = 0;
+    let reasons = [];
+
+    const { goals, issues, lifestyles, diets, ages } = p.triggers;
+
+    if (goals?.includes(answers.goal)) { score += 40; reasons.push("matches your primary goal"); }
+    (answers.issues || []).forEach(i => { if (issues?.includes(i)) { score += 15; } });
+    if (answers.issues?.length > 0 && issues?.some(i => answers.issues.includes(i))) reasons.push("targets your daily symptoms");
+    if (lifestyles?.includes(answers.lifestyle)) { score += 20; reasons.push("suited to your lifestyle"); }
+    if (diets?.includes(answers.diet)) { score += 10; reasons.push("fits your diet"); }
+    if (ages?.includes(answers.age)) { score += 15; reasons.push("optimised for your age group"); }
+
+    // Vegan override: remove Omega-3 for vegans
+    if (answers.diet === "vegan" && name === "Omega-3 Essential Fats") score = 0;
+
+    scores[name] = Math.min(score, 98);
+    whys[name] = reasons.length ? reasons.slice(0,2).join(" · ") : "broad-spectrum foundational support";
+  });
+
+  return Object.entries(scores)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0,3)
+    .map(([name, score]) => ({ name, score, why: whys[name], ...products[name] }));
+}
+
+// ══════════════════════════════════════════════════════
+//  QUIZ STATE
+// ══════════════════════════════════════════════════════
+let current = 0;
+let answers = {};
+
+function getSelected(stepId) { return answers[stepId] || (steps[current].type === "multi" ? [] : null); }
+
+// ══════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════
+function render() {
+  if (current >= steps.length) { renderAnalysing(); return; }
+  const step = steps[current];
+  const sel = getSelected(step.id);
+  const pct = ((current) / steps.length) * 100;
+
+  document.getElementById("quizContent").innerHTML = `
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span>${step.tag}</span><span>${current+1} / ${steps.length}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="step-tag">${step.tag}</div>
+    <div class="step-question">${step.question}</div>
+    <div class="step-sub">${step.sub}</div>
+    ${step.type === "multi" ? '<div class="multi-hint">Select all that apply</div>' : ''}
+    <div class="options ${step.options.length <= 4 ? 'cols-2' : ''}">
+      ${step.options.map(opt => `
+        <div class="option-card ${
+          step.type === "multi"
+            ? (sel.includes(opt.value) ? "selected" : "")
+            : (sel === opt.value ? "selected" : "")
+        }" data-value="${opt.value}">
+          <div class="opt-emoji">${opt.emoji}</div>
+          <div class="opt-body">
+            <div class="opt-label">${opt.label}</div>
+            ${opt.desc ? `<div class="opt-desc">${opt.desc}</div>` : ''}
+          </div>
+          <div class="opt-check">${
+            (step.type === "multi" ? sel.includes(opt.value) : sel === opt.value) ? "✓" : ""
+          }</div>
+        </div>
+      `).join("")}
+    </div>
+    <div class="nav">
+      ${current > 0 ? `<button class="btn-back" id="btnBack">← Back</button>` : ''}
+      <button class="btn-next" id="btnNext" ${
+        (step.type === "multi" ? sel.length === 0 : !sel) ? "disabled" : ""
+      }>${current === steps.length - 1 ? "See My Stack →" : "Next →"}</button>
+    </div>
+  `;
+
+  // Events
+  document.querySelectorAll(".option-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const val = card.dataset.value;
+      if (step.type === "multi") {
+        let arr = [...(answers[step.id] || [])];
+        if (arr.includes(val)) arr = arr.filter(v => v !== val);
+        else arr.push(val);
+        answers[step.id] = arr;
+      } else {
+        answers[step.id] = val;
+      }
+      render();
+    });
+  });
+
+  document.getElementById("btnNext")?.addEventListener("click", () => {
+    current++;
+    render();
+  });
+  document.getElementById("btnBack")?.addEventListener("click", () => {
+    current--;
+    render();
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  ANALYSING ANIMATION
+// ══════════════════════════════════════════════════════
+const analysingMessages = [
+  "Mapping your symptoms to deficiencies...",
+  "Cross-referencing 8 formulas...",
+  "Personalising your stack..."
+];
+
+function renderAnalysing() {
+  let msgIdx = 0;
+  document.getElementById("quizContent").innerHTML = `
+    <div class="analysing">
+      <div class="spinner"></div>
+      <h3 id="analysingMsg">${analysingMessages[0]}</h3>
+      <p>Building your personalised protocol<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
+    </div>
+  `;
+  const interval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % analysingMessages.length;
+    const el = document.getElementById("analysingMsg");
+    if (el) el.textContent = analysingMessages[msgIdx];
+  }, 900);
+
+  setTimeout(() => { clearInterval(interval); renderResults(); }, 2800);
+}
+
+// ══════════════════════════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════════════════════════
+function renderResults() {
+  const recs = scoreProducts(answers);
+
+  document.getElementById("quizContent").innerHTML = `
+    <div class="result-header">
+      <div class="badge">✦ Your Personalised Stack</div>
+      <h2>Here's what your body needs</h2>
+      <p>Based on your goals, symptoms & lifestyle — matched by our nutritionist protocol.</p>
+    </div>
+    <div class="result-cards">
+      ${recs.map((r, i) => `
+        <div class="result-card">
+          <div class="rc-emoji">${r.emoji}</div>
+          <div class="rc-body">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+              <div class="rc-name">${r.name}</div>
+              <div class="rc-match">${r.score}% match</div>
+            </div>
+            <div class="rc-why">✦ ${r.why}</div>
+            <div class="rc-desc">${r.desc}</div>
+            <div class="match-bar-wrap">
+              <div class="match-bar-bg"><div class="match-bar-fill" style="width:0%" data-target="${r.score}%"></div></div>
+            </div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+    <button class="result-cta" id="btnShop">Add My Stack to Cart →</button>
+    <div class="result-footer">
+  🔒 No subscription required · Free shipping over €49 · 30-day guarantee
+</div>
+<div style="text-align:center; margin-top:10px; font-size:.72rem; color:var(--muted); line-height:1.5; padding: 0 8px;">
+  ⚠️ This quiz is for informational & research purposes only. It does not constitute medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional before starting any supplement regimen.
+</div>
+
+    <div style="text-align:center;margin-top:18px;">
+      <button style="background:none;border:none;color:var(--muted);font-size:.8rem;cursor:pointer;" id="retakeBtn">↺ Retake quiz</button>
+    </div>
+  `;
+
+  // Animate match bars
+  setTimeout(() => {
+    document.querySelectorAll(".match-bar-fill").forEach(bar => {
+      bar.style.width = bar.dataset.target;
+    });
+  }, 100);
+
+  document.getElementById("btnShop").addEventListener("click", () => {
+    alert("Redirecting to your personalised cart... (integrate with your shop system here)");
+  });
+
+  document.getElementById("retakeBtn").addEventListener("click", () => {
+    current = 0; answers = {}; render();
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+document.getElementById("openQuiz").addEventListener("click", () => {
+  document.getElementById("overlay").classList.add("active");
+  current = 0; answers = {};
+  render();
+  document.getElementById("popup").scrollTop = 0;
+});
+
+document.getElementById("closeBtn").addEventListener("click", () => {
+  document.getElementById("overlay").classList.remove("active");
+});
+
+document.getElementById("overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("overlay")) {
+    document.getElementById("overlay").classList.remove("active");
+  }
+});
+</script>
+</body>
+</html>
