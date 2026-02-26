@@ -1180,6 +1180,7 @@ function showResults() {
       <span class="results-label">✦ Your personalised protocol</span>
       <h2>Your <em>perfect stack</em><br>is ready.</h2>
       <p>Based on your goals, lifestyle and biology — here are the supplements our nutritionist protocol selected for you.</p>
+      <p>Tasks are now done, you can start filling out the form.</p>
     </div>
     <div class="profile-summary">
       ${profileTags.map(t => `<span class="profile-tag">${t}</span>`).join('')}
@@ -1187,7 +1188,7 @@ function showResults() {
     <div class="stack-grid" id="stackGrid"></div>
     <div class="results-footer">
       <p>All Nutree products ship within 48 hours. Free delivery on orders over €60. 30-day money-back guarantee on your first stack.</p>
-      <button class="btn-all-stack">Add Full Stack to Cart — Save 15%</button>
+      <button class="btn-all-stack">Thank you! You can now fill out the form</button>
     </div>
     <div class="disclaimer">
       <span class="disclaimer-icon">ℹ️</span>
@@ -1234,7 +1235,7 @@ function showResults() {
 
   // Button handlers
   screen.querySelector('.btn-all-stack').addEventListener('click', () => {
-    screen.querySelector('.btn-all-stack').textContent = `✓ Stack Added — ${recs.length} items in cart`;
+    screen.querySelector('.btn-all-stack').textContent = `You can close the tab now, thanks`;
     screen.querySelector('.btn-all-stack').style.background = 'var(--deep-green)';
     screen.querySelector('.btn-all-stack').style.color = 'var(--cream)';
   });
